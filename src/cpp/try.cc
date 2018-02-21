@@ -60,6 +60,26 @@ double **activate(v8::Local<v8::Array> layers, v8::Local<v8::Array> input) {
   return activations;
 }
 
+double dsigmoid(double x) {
+  return exp(-x) * pow (1 + exp(-x), -2);
+}
+
+double gradientDescent(double learning_rate, double target, double produced, double current_weight) {
+  return 1 * learning_rate * ((target - produced) * dsigmoid(current_weight)) * produced;
+}
+
+
+double backpropagate(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::Array> input, double output, double weight) {
+  double **activations = activate(layers, input);
+  // for (int i = 0; i < activations[]; ++i)
+  // {
+  //   /* code */
+  // }
+  unsigned int this_length = layers->Get(layers->Length() - 1)->NumberValue();
+  weight = weight - gradientDescent(learning_rate, output, activations[this_length][0], weight);
+  return weight;
+}
+
 
 void iterate(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
@@ -72,11 +92,11 @@ void iterate(const FunctionCallbackInfo<Value>& args) {
   }
 
   // parse arguments
-  // double learning_rate = args[0]->NumberValue();
+  double learning_rate = args[0]->NumberValue();
   Local<Array> input_array = Local<Array>::Cast(args[1]);
   Local<Array> layers_array = Local<Array>::Cast(args[2]);
-  // double output = args[3]->NumberValue();
-  // double iterations = args[4]->NumberValue();
+  Local<Array> output_array = Local<Array>::Cast(args[3]);
+  double iterations = args[4]->NumberValue();
   // double value = 0.5;
 
   double **ans = activate(layers_array, input_array);
@@ -90,6 +110,7 @@ void iterate(const FunctionCallbackInfo<Value>& args) {
   finans->Set(String::NewFromUtf8(isolate, "11"), Number::New(isolate, ans[1][1]));
   finans->Set(String::NewFromUtf8(isolate, "12"), Number::New(isolate, ans[1][2]));
   finans->Set(String::NewFromUtf8(isolate, "20"), Number::New(isolate, ans[2][0]));
+  finans->Set(String::NewFromUtf8(isolate, "back"), Number::New(isolate, backpropagate(learning_rate, layers_array, input_array, output_array->Get(0)->NumberValue(), 0.5)));
 
 
   // Set the return weight (using the passed in FunctionCallbackInfo<Value>&)
