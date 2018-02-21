@@ -1,1 +1,1 @@
-module.exports = require('./build/Release/native.node').iterate;
+module.exports = require('./build/Release/native.node').train;

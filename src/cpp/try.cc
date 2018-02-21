@@ -10,7 +10,7 @@ double sigmoid(double x) {
   return 1 / (1 + exp(-x));
 }
 
-double **getWeight(v8::Local<v8::Array> layers) {
+double **getWeights(v8::Local<v8::Array> layers) {
   double **ans = 0;
   unsigned int length = layers->Length();
   ans = new double *[length];
@@ -26,8 +26,7 @@ double **getWeight(v8::Local<v8::Array> layers) {
   return ans;
 }
 
-double **activate(v8::Local<v8::Array> layers, v8::Local<v8::Array> input) {
-  double **weights = getWeight(layers);
+double **activate(v8::Local<v8::Array> layers, v8::Local<v8::Array> input, double **weights) {
   double **activations = 0;
   unsigned int length = layers->Length();
   activations = new double *[length];
@@ -61,27 +60,37 @@ double **activate(v8::Local<v8::Array> layers, v8::Local<v8::Array> input) {
 }
 
 double dsigmoid(double x) {
-  return exp(-x) * pow (1 + exp(-x), -2);
+  return 0 - exp(-x) * pow (1 + exp(-x), -2);
 }
 
 double gradientDescent(double learning_rate, double target, double produced, double current_weight) {
-  return 1 * learning_rate * ((target - produced) * dsigmoid(current_weight)) * produced;
+  return 0 - (1 * learning_rate * ((target - produced) * dsigmoid(current_weight)) * produced);
 }
 
+double **learn(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::Array> input, v8::Local<v8::Array> output, double **weights) {
+  double **activations = activate(layers, input, weights);
 
-double backpropagate(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::Array> input, double output, double weight) {
-  double **activations = activate(layers, input);
-  // for (int i = 0; i < activations[]; ++i)
-  // {
-  //   /* code */
-  // }
   unsigned int this_length = layers->Get(layers->Length() - 1)->NumberValue();
-  weight = weight - gradientDescent(learning_rate, output, activations[this_length][0], weight);
-  return weight;
+  for (unsigned int i = 0; i < this_length; ++i)
+  {
+    weights[layers->Length() - 1][i] = weights[layers->Length() - 1][i] + gradientDescent(learning_rate, output->Get(i)->NumberValue(), activations[this_length][i], weights[layers->Length() - 1][i]);
+  }
+  
+  return activate(layers, input, weights);
+}
+
+double **iterate(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::Array> input, v8::Local<v8::Array> output, unsigned int iterations) {
+  double **weights = getWeights(layers);
+  for (unsigned int i = 0; i < iterations; ++i)
+  {
+    weights = learn(learning_rate, layers, input, output, weights);
+  }
+
+  return weights;
 }
 
 
-void iterate(const FunctionCallbackInfo<Value>& args) {
+void train(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
   // Check the number of arguments passed.
   if (args.Length() < 5) {
@@ -96,10 +105,9 @@ void iterate(const FunctionCallbackInfo<Value>& args) {
   Local<Array> input_array = Local<Array>::Cast(args[1]);
   Local<Array> layers_array = Local<Array>::Cast(args[2]);
   Local<Array> output_array = Local<Array>::Cast(args[3]);
-  double iterations = args[4]->NumberValue();
-  // double value = 0.5;
+  unsigned int iterations = args[4]->NumberValue();
 
-  double **ans = activate(layers_array, input_array);
+  double **ans = iterate(learning_rate, layers_array, input_array, output_array, iterations);
 
   // export
   // Local<Number> ans = Number::New(isolate, ans[2][0]);
@@ -110,15 +118,14 @@ void iterate(const FunctionCallbackInfo<Value>& args) {
   finans->Set(String::NewFromUtf8(isolate, "11"), Number::New(isolate, ans[1][1]));
   finans->Set(String::NewFromUtf8(isolate, "12"), Number::New(isolate, ans[1][2]));
   finans->Set(String::NewFromUtf8(isolate, "20"), Number::New(isolate, ans[2][0]));
-  finans->Set(String::NewFromUtf8(isolate, "back"), Number::New(isolate, backpropagate(learning_rate, layers_array, input_array, output_array->Get(0)->NumberValue(), 0.5)));
-
+  finans->Set(String::NewFromUtf8(isolate, "21"), Number::New(isolate, ans[2][1]));
 
   // Set the return weight (using the passed in FunctionCallbackInfo<Value>&)
   args.GetReturnValue().Set(finans);
 }
 
 void Init(Local<Object> exports) {
-  NODE_SET_METHOD(exports, "iterate", iterate);
+  NODE_SET_METHOD(exports, "train", train);
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init)

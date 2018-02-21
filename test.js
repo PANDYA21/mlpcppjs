@@ -1,8 +1,7 @@
-const iterate = require('./build/Release/native.node').iterate;
-const learning_rate = 0.1;
-const layers = [2, 3, 1];
-const input = [1, 0, 1];
-const output = [1];
-const iterations = 1e3;
-const initial_weight = 0.5;
-console.log(iterate(learning_rate, input, layers, output, iterations));
+const train = require('.');
+const learning_rate = 300;
+const layers = [2, 3, 2];
+const input = [1, 0];
+const output = [1, 0];
+const iterations = 2e4;
+console.log(train(learning_rate, input, layers, output, iterations));
