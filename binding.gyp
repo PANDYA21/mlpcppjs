@@ -3,7 +3,7 @@
     {
       "target_name": "native",
       "sources": [
-        "./src/cpp/gredient_descent.cc"
+        "./src/cpp/try.cc"
       ],
       "include_dirs": [
         "<!@(node -p \"require('node-addon-api').include\")"

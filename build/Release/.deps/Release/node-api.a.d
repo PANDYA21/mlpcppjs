@@ -1,0 +1,1 @@
+cmd_Release/node-api.a := rm -f Release/node-api.a && ./gyp-mac-tool filter-libtool libtool  -static -o Release/node-api.a Release/obj.target/node-api/node_modules/node-addon-api/src/node_api.o Release/obj.target/node-api/node_modules/node-addon-api/src/node_internals.o
