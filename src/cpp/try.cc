@@ -6,15 +6,9 @@ namespace demo {
 
 using namespace v8; 
 
-// double *getWeight(v8::Local<v8::Array> layers) {
-//   double *ans = 0;
-//   ans = new double [layers->Length()];
-//   for (unsigned int i = 0; i < layers->Length(); ++i)
-//   {
-//     ans[i] = layers->Get(i)->NumberValue();
-//   }
-//   return ans;
-// }
+double sigmoid(double x) {
+  return 1 / (1 + exp(-x));
+}
 
 double **getWeight(v8::Local<v8::Array> layers) {
   double **ans = 0;
@@ -32,6 +26,40 @@ double **getWeight(v8::Local<v8::Array> layers) {
   return ans;
 }
 
+double **activate(v8::Local<v8::Array> layers, v8::Local<v8::Array> input) {
+  double **weights = getWeight(layers);
+  double **activations = 0;
+  unsigned int length = layers->Length();
+  activations = new double *[length];
+  for (unsigned int i = 0; i < length; ++i)
+  {
+    unsigned int this_length = layers->Get(i)->NumberValue();
+    activations[i] = new double [this_length];
+    for (unsigned int j = 0; j < this_length; ++j)
+    {
+      if (i == 0)
+      {
+        activations[i][j] = 0;
+        for (unsigned int k = 0; k < input->Length(); ++k)
+        {
+          activations[i][j] = activations[i][j] + (input->Get(k)->NumberValue() * weights[i][j]);
+        }
+        activations[i][j] = sigmoid(activations[i][j]);
+      } else 
+      {
+        activations[i][j] = 0;
+        for (unsigned int k = 0; k < sizeof activations[i-1]; ++k)
+        {
+          activations[i][j] = activations[i][j] + (activations[i-1][k] * weights[i][j]);
+        }
+        activations[i][j] = sigmoid(activations[i][j]);
+      }
+    }
+  }
+
+  return activations;
+}
+
 
 void iterate(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
@@ -45,16 +73,16 @@ void iterate(const FunctionCallbackInfo<Value>& args) {
 
   // parse arguments
   // double learning_rate = args[0]->NumberValue();
-  // Local<Array> input_array = Local<Array>::Cast(args[1]);
+  Local<Array> input_array = Local<Array>::Cast(args[1]);
   Local<Array> layers_array = Local<Array>::Cast(args[2]);
   // double output = args[3]->NumberValue();
   // double iterations = args[4]->NumberValue();
   // double value = 0.5;
 
-  double **ans = getWeight(layers_array);
+  double **ans = activate(layers_array, input_array);
 
   // export
-  Local<Number> num = Number::New(isolate, ans[1][1]);
+  Local<Number> num = Number::New(isolate, ans[2][0]);
 
   // Set the return weight (using the passed in FunctionCallbackInfo<Value>&)
   args.GetReturnValue().Set(num);
