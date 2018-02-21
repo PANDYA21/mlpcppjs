@@ -48,7 +48,7 @@ double **activate(v8::Local<v8::Array> layers, v8::Local<v8::Array> input) {
       } else 
       {
         activations[i][j] = 0;
-        for (unsigned int k = 0; k < sizeof activations[i-1]; ++k)
+        for (unsigned int k = 0; k < layers->Get(i-1)->NumberValue(); ++k)
         {
           activations[i][j] = activations[i][j] + (activations[i-1][k] * weights[i][j]);
         }
@@ -82,10 +82,18 @@ void iterate(const FunctionCallbackInfo<Value>& args) {
   double **ans = activate(layers_array, input_array);
 
   // export
-  Local<Number> num = Number::New(isolate, ans[2][0]);
+  // Local<Number> ans = Number::New(isolate, ans[2][0]);
+  Local<Object> finans = Object::New(isolate);
+  finans->Set(String::NewFromUtf8(isolate, "01"), Number::New(isolate, ans[0][1]));
+  finans->Set(String::NewFromUtf8(isolate, "00"), Number::New(isolate, ans[0][0]));
+  finans->Set(String::NewFromUtf8(isolate, "10"), Number::New(isolate, ans[1][0]));
+  finans->Set(String::NewFromUtf8(isolate, "11"), Number::New(isolate, ans[1][1]));
+  finans->Set(String::NewFromUtf8(isolate, "12"), Number::New(isolate, ans[1][2]));
+  finans->Set(String::NewFromUtf8(isolate, "20"), Number::New(isolate, ans[2][0]));
+
 
   // Set the return weight (using the passed in FunctionCallbackInfo<Value>&)
-  args.GetReturnValue().Set(num);
+  args.GetReturnValue().Set(finans);
 }
 
 void Init(Local<Object> exports) {
@@ -94,4 +102,4 @@ void Init(Local<Object> exports) {
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init)
 
-}  // namespace demo
+}  // namespace demo`
