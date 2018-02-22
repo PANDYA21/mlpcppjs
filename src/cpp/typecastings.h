@@ -45,4 +45,24 @@ v8::Local<v8::Array> cpp2DArrayToJs2DArray(Isolate *isolate, v8::Local<v8::Array
   return finans;
 }
 
+v8::Local<v8::Array> cpp3DArrayToJs3DArray(Isolate *isolate, v8::Local<v8::Array> layers_array, v8::Local<v8::Array> array_of_inputs, double ***ans) {
+  v8::Local<v8::Array> finans = v8::Array::New(isolate);
+  for (unsigned int k = 0; k < array_of_inputs->Length(); ++k)
+  {
+    v8::Local<v8::Array> this_output = v8::Array::New(isolate);
+    for (unsigned int i = 0; i < layers_array->Length(); ++i)
+    {
+      v8::Local<v8::Array> this_ans = v8::Array::New(isolate);
+      for (unsigned int j = 0; j < layers_array->Get(i)->NumberValue(); ++j)
+      {
+        this_ans->Set(j, Number::New(isolate, ans[k][i][j]));
+      }
+      this_output->Set(i, this_ans);
+    }
+    finans->Set(k, this_output);
+  }
+
+  return finans;
+}
+
 #endif

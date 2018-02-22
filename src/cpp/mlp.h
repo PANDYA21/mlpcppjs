@@ -50,6 +50,21 @@ double **activate(v8::Local<v8::Array> layers, v8::Local<v8::Array> input, doubl
   return activations;
 }
 
+double ***activateMulti(v8::Local<v8::Array> layers, v8::Local<v8::Array> array_of_inputs, double **weights) {
+	double ***activations = 0;
+	unsigned int length = array_of_inputs->Length();
+  activations = new double **[length];
+  for (unsigned int i = 0; i < length; ++i)
+  {
+  	unsigned int this_length = array_of_inputs->Get(i)->NumberValue();
+    activations[i] = new double *[this_length];
+    v8::Local<v8::Array> this_input = v8::Local<v8::Array>::Cast(array_of_inputs->Get(i));
+    activations[i] = activate(layers, this_input, weights);
+  }
+
+  return activations;
+}
+
 double **learn(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::Array> input, v8::Local<v8::Array> output, double **weights) {
   double **activations = activate(layers, input, weights);
 
@@ -62,13 +77,18 @@ double **learn(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::
   return weights;
 }
 
-double **iterate(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::Array> input, v8::Local<v8::Array> output, unsigned int iterations) {
+double **iterate(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::Array> array_of_inputs, v8::Local<v8::Array> array_of_outputs, unsigned int iterations) {
   double **weights = getWeights(layers);
   for (unsigned int i = 0; i < iterations; ++i)
   {
-    weights = learn(learning_rate, layers, input, output, weights);
+  	for (unsigned int j = 0; j < array_of_inputs->Length(); ++j)
+  	{
+  		v8::Local<v8::Array> this_input = v8::Local<v8::Array>::Cast(array_of_inputs->Get(j));
+  		v8::Local<v8::Array> this_output = v8::Local<v8::Array>::Cast(array_of_outputs->Get(j));
+  		weights = learn(learning_rate, layers, this_input, this_output, weights);
+  	}
   }
-  
+
   return weights;
 }
 

@@ -4,9 +4,9 @@
 #include "gradientdescent.h"
 #include "mlp.h"
 #include "typecastings.h"
-#include <string>
-#include <sstream>
-#include <iostream>
+// #include <string>
+// #include <sstream>
+// #include <iostream>
 
 namespace demo {
 
@@ -34,7 +34,7 @@ void train(const FunctionCallbackInfo<Value>& args) {
 
   // export
   Local<Array> weights = cpp2DArrayToJs2DArray(isolate, layers_array, trained_weights);
-  Local<Array> activations = cpp2DArrayToJs2DArray(isolate, layers_array, activate(layers_array, input_array, trained_weights));
+  Local<Array> activations = cpp3DArrayToJs3DArray(isolate, layers_array, input_array, activateMulti(layers_array, input_array, trained_weights));
   Local<Object> finans = Object::New(isolate);
   finans->Set(String::NewFromUtf8(isolate, "weights"), weights);
   finans->Set(String::NewFromUtf8(isolate, "activations"), activations);
