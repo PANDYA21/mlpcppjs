@@ -1,6 +1,9 @@
 // addon.cc
 #include <node.h>
 #include <math.h>
+#include <string>
+#include <sstream>
+#include <iostream>
 
 namespace demo {
 
@@ -76,7 +79,7 @@ double **learn(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::
     weights[layers->Length() - 1][i] = weights[layers->Length() - 1][i] + gradientDescent(learning_rate, output->Get(i)->NumberValue(), activations[this_length][i], weights[layers->Length() - 1][i]);
   }
   
-  return activate(layers, input, weights);
+  return weights;
 }
 
 double **iterate(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8::Array> input, v8::Local<v8::Array> output, unsigned int iterations) {
@@ -86,7 +89,7 @@ double **iterate(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8
     weights = learn(learning_rate, layers, input, output, weights);
   }
 
-  return weights;
+  return activate(layers, input, weights);
 }
 
 
@@ -110,22 +113,79 @@ void train(const FunctionCallbackInfo<Value>& args) {
   double **ans = iterate(learning_rate, layers_array, input_array, output_array, iterations);
 
   // export
-  // Local<Number> ans = Number::New(isolate, ans[2][0]);
-  Local<Object> finans = Object::New(isolate);
-  finans->Set(String::NewFromUtf8(isolate, "01"), Number::New(isolate, ans[0][1]));
-  finans->Set(String::NewFromUtf8(isolate, "00"), Number::New(isolate, ans[0][0]));
-  finans->Set(String::NewFromUtf8(isolate, "10"), Number::New(isolate, ans[1][0]));
-  finans->Set(String::NewFromUtf8(isolate, "11"), Number::New(isolate, ans[1][1]));
-  finans->Set(String::NewFromUtf8(isolate, "12"), Number::New(isolate, ans[1][2]));
-  finans->Set(String::NewFromUtf8(isolate, "20"), Number::New(isolate, ans[2][0]));
-  finans->Set(String::NewFromUtf8(isolate, "21"), Number::New(isolate, ans[2][1]));
+  Local<Array> finans = Array::New(isolate);
+  for (unsigned int i = 0; i < layers_array->Length(); ++i)
+  {
+    Local<Array> this_ans = Array::New(isolate);
+    for (unsigned int j = 0; j < layers_array->Get(i)->NumberValue(); ++j)
+    {
+      this_ans->Set(j, Number::New(isolate, ans[i][j]));
+    }
+    finans->Set(i, this_ans);
+  }
 
   // Set the return weight (using the passed in FunctionCallbackInfo<Value>&)
   args.GetReturnValue().Set(finans);
 }
 
+double *convertToCArray(v8::Local<v8::Array> arr) {
+  double *carr = 0;
+  unsigned int length = arr->Length();
+  carr = new double [length];
+  for (unsigned int i = 0; i < length; ++i)
+  {
+    carr[i] = arr->Get(i)->NumberValue();
+  }
+
+  return carr;
+}
+
+double **convert2DToCArray(v8::Local<v8::Array> arr) {
+  double **carr = 0;
+  unsigned int length = arr->Length();
+  carr = new double *[length];
+  for (unsigned int i = 0; i < length; ++i)
+  {
+    Local<Array> this_arr = Local<Array>::Cast(arr->Get(i));
+    unsigned int this_length = this_arr->Length();
+    carr[i] = new double [this_length];
+    carr[i] = convertToCArray(this_arr);
+  }
+
+  return carr;
+}
+
+void activateExport(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  // Check the number of arguments passed.
+  if (args.Length() < 3) {
+    // Throw an Error that is passed back to JavaScript
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    return;
+  }
+
+  // parse arguments
+  Local<Array> layers_array = Local<Array>::Cast(args[0]);
+  Local<Array> input_array = Local<Array>::Cast(args[1]);
+  Local<Array> weights_array = Local<Array>::Cast(args[2]);
+
+  double **ans = activate(layers_array, input_array, convert2DToCArray(weights_array));
+
+  // export
+  // Local<Number> ans = Number::New(isolate, ans[2][0]);
+  Local<Object> finans2 = Object::New(isolate);
+  unsigned int index = layers_array->Get(0)->NumberValue();
+  finans2->Set(String::NewFromUtf8(isolate, "prediction"), Number::New(isolate, ans[index][0]));
+
+  // Set the return weight (using the passed in FunctionCallbackInfo<Value>&)
+  args.GetReturnValue().Set(finans2);
+}
+
+
 void Init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "train", train);
+  NODE_SET_METHOD(exports, "activate", activateExport);
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, Init)

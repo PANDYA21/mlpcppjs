@@ -1,1 +1,1 @@
-module.exports = require('./build/Release/native.node').train;
+module.exports = require('./build/Release/native.node');
