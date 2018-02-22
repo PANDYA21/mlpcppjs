@@ -3,7 +3,7 @@
     {
       "target_name": "native",
       "sources": [
-        "./src/cpp/mlp.cc"
+        "./src/cpp/main.cc"
       ],
       "include_dirs": [
         "<!@(node -p \"require('node-addon-api').include\")"

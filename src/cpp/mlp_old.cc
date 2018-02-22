@@ -89,7 +89,23 @@ double **iterate(double learning_rate, v8::Local<v8::Array> layers, v8::Local<v8
     weights = learn(learning_rate, layers, input, output, weights);
   }
 
-  return activate(layers, input, weights);
+  // return activate(layers, input, weights);
+  return weights;
+}
+
+v8::Local<v8::Array> pack2DArray(Isolate *isolate, v8::Local<v8::Array> layers_array, double **ans) {
+  Local<Array> finans = Array::New(isolate);
+  for (unsigned int i = 0; i < layers_array->Length(); ++i)
+  {
+    Local<Array> this_ans = Array::New(isolate);
+    for (unsigned int j = 0; j < layers_array->Get(i)->NumberValue(); ++j)
+    {
+      this_ans->Set(j, Number::New(isolate, ans[i][j]));
+    }
+    finans->Set(i, this_ans);
+  }
+
+  return finans;
 }
 
 
@@ -110,19 +126,14 @@ void train(const FunctionCallbackInfo<Value>& args) {
   Local<Array> output_array = Local<Array>::Cast(args[3]);
   unsigned int iterations = args[4]->NumberValue();
 
-  double **ans = iterate(learning_rate, layers_array, input_array, output_array, iterations);
+  double **trained_weights = iterate(learning_rate, layers_array, input_array, output_array, iterations);
 
   // export
-  Local<Array> finans = Array::New(isolate);
-  for (unsigned int i = 0; i < layers_array->Length(); ++i)
-  {
-    Local<Array> this_ans = Array::New(isolate);
-    for (unsigned int j = 0; j < layers_array->Get(i)->NumberValue(); ++j)
-    {
-      this_ans->Set(j, Number::New(isolate, ans[i][j]));
-    }
-    finans->Set(i, this_ans);
-  }
+  Local<Array> weights = pack2DArray(isolate, layers_array, trained_weights);
+  Local<Array> activations = pack2DArray(isolate, layers_array, activate(layers_array, input_array, trained_weights));
+  Local<Object> finans = Object::New(isolate);
+  finans->Set(String::NewFromUtf8(isolate, "weights"), weights);
+  finans->Set(String::NewFromUtf8(isolate, "activations"), activations);
 
   // Set the return weight (using the passed in FunctionCallbackInfo<Value>&)
   args.GetReturnValue().Set(finans);
