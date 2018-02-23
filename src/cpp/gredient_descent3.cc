@@ -49,12 +49,12 @@ double** activate(v8::Local<v8::Array> input, v8::Local<v8::Array> layers, doubl
 
 // initialize weights
 double** initWeights(v8::Local<v8::Array> layers) {
-  double** ans = 0;
-  ans = new double*[3/*(layers->Length())*/];
-  for (unsigned int i = 0; i < (layers->Length()); ++i) {
-    ans[i] = new double[5/*(layers->Get(i)->NumberValue())*/];
+  double *ans[3];
+
+  for (unsigned int i = 0; i < 3; ++i) {
+    ans[i] = double *[100];
     for (unsigned int j = 0; j < (layers->Get(i)->NumberValue()); ++j) {
-      ans[i][j] = 0.5; // initial weight
+      ans[i][j] = &(0.5); // initial weight
     }
   }
   return ans;
@@ -97,32 +97,26 @@ void iterate(const FunctionCallbackInfo<Value>& args) {
   double value = 0.5;
 
   // value = backpropagate(learning_rate, input_array, output, iterations, value);
-  double** ans = 0;
-  ans = new double*[3];
-  for (unsigned int i = 0; i < iterations; ++i) {
-    ans[i] = new double[5];
+  double** ans[5][100];
+  // for (unsigned int i = 0; i < iterations; ++i) {
     // if (i == 0) {
     //   ans = iterateOnce(learning_rate, input_array, layers_array, output, initWeights(layers_array));
     // }
     // ans = iterateOnce(learning_rate, input_array, layers_array, output, ans);
     ans = initWeights(layers_array);
-  }
+  // }
 
   // export
   Local<Array> result = Array::New(isolate);
-  for (unsigned int i = 0; i < sizeof(ans)/sizeof(ans[0]); ++i) {
+  for (unsigned int i = 0; i < layers_array->Length(); ++i) {
     Local<Array> this_result = Array::New(isolate);
-    // Local<Object> this_result = Object::New(isolate);
-    for (unsigned int j = 0; j < sizeof(ans[i]); ++j) {
-      this_result->Set(j, ans[i][j]);
-      // packDoublesToObject(isolate, this_result, j, ans[i][j]);
+    for (unsigned int j = 0; j < (layers->Get(i)->NumberValue()); ++j) {
+      this_result->Set(j, Number::New(**ans[i][j]));
     }
-    result->Set(i, Array::New(isolate, & this_result));
-    // packObjectsToArray(isolate, result, i, this_result);
+    result->Set(i, Array::New(isolate, this_result));
   }
 
-  // Set the return weight (using the passed in
-  // FunctionCallbackInfo<Value>&)
+  // Set the return weight (using the passed in FunctionCallbackInfo<Value>&)
   args.GetReturnValue().Set(result);
 }
 

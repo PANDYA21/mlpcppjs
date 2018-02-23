@@ -141,7 +141,7 @@
     <None Include="..\binding.gyp"/>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\cpp\gredient_descent.cc"/>
+    <ClCompile Include="..\src\cpp\try2.cc"/>
     <ClCompile Include="C:\Users\bpa\AppData\Roaming\nvm\v8.9.3\node_modules\npm\node_modules\node-gyp\src\win_delay_load_hook.cc"/>
   </ItemGroup>
   <ItemGroup>

@@ -20,7 +20,7 @@
 		"dev_port": 8081
 	},
 	"scripts": {
-		"build": "node-gyp configure &&npm install",
+		"build": "node-gyp clean &&node-gyp configure &&npm install",
 		"test": "node test.js"
 	},
 	"author": "Bhaumik Pandya <bhaumik.pandya21@gmail.com>",
