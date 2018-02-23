@@ -4,9 +4,6 @@
 #include "gradientdescent.h"
 #include "mlp.h"
 #include "typecastings.h"
-// #include <string>
-// #include <sstream>
-// #include <iostream>
 
 namespace demo {
 
